@@ -1,0 +1,26 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Посты категории {{ category.name }}{% endblock %}
+
+{% block content %}
+<h2>Посты категории: {{ category.name }}</h2>
+
+{% for post in page_obj %}
+<div class="post">
+    <h3><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h3>
+    <p>{{ post.content|truncatewords:30 }}</p>
+</div>
+{% empty %}
+<p>Постов в этой категории пока нет.</p>
+{% endfor %}
+
+<div class="pagination">
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">← Назад</a>
+    {% endif %}
+    <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Вперед →</a>
+    {% endif %}
+</div>
+{% endblock %}

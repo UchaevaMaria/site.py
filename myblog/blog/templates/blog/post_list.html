@@ -1,0 +1,36 @@
+{% extends 'blog/base.html' %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+
+<form method="get" style="margin-bottom: 20px;">
+    <input type="text" name="q" placeholder="Поиск..." value="{{ query|default:'' }}">
+    <button type="submit">Найти</button>
+</form>
+
+{% for post in page_obj %}
+    <div class="post">
+        <h2><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+        {% if post.image %}
+            <img src="{{ post.image.url }}" alt="{{ post.title }}" width="300">
+        {% endif %}
+        <p>{{ post.content|truncatewords:40 }}</p>
+        <small>Автор: {{ post.author }} | {{ post.published_date|date:"d.m.Y H:i" }}</small>
+    </div>
+    <hr>
+{% empty %}
+    <p>Постов пока нет.</p>
+{% endfor %}
+
+<div>
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">← Предыдущая</a>
+    {% endif %}
+
+    <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Следующая →</a>
+    {% endif %}
+</div>
+
+{% endblock %}

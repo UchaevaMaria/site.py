@@ -1,0 +1,45 @@
+{% extends 'blog/base.html' %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+
+<h2>{{ post.title }}</h2>
+{% if post.image %}
+    <img src="{{ post.image.url }}" alt="{{ post.title }}" width="400">
+{% endif %}
+<p>{{ post.content|linebreaks }}</p>
+
+<p><strong>Автор:</strong> {{ post.author }}</p>
+<p><strong>Дата публикации:</strong> {{ post.published_date|date:"d.m.Y H:i" }}</p>
+<p><strong>Категория:</strong> {{ post.category }}</p>
+
+<hr>
+<h3>Комментарии</h3>
+
+{% for comment in comments %}
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <strong>{{ comment.author }}</strong> — {{ comment.created_date|date:"d.m.Y H:i" }}<br>
+        {{ comment.text }}
+
+        {% if user.is_superuser or user.username == comment.author %}
+            <!-- Кнопка удаления комментария -->
+            <form method="post" action="{% url 'delete_comment' comment.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" style="color:red; background:none; border:none; cursor:pointer;">Удалить</button>
+            </form>
+        {% endif %}
+    </div>
+{% empty %}
+    <p>Комментариев пока нет.</p>
+{% endfor %}
+
+<h4>Оставить комментарий</h4>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Отправить</button>
+</form>
+
+<a href="{% url 'post_list' %}">← Назад</a>
+
+{% endblock %}
+{% block body_class %}post-detail{% endblock %}

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Мир Лудомании 💰{% endblock %}</title>
+
+    <style>
+        /* === Общие стили === */
+        body {
+
+            margin: 0;
+            padding: 0;
+            background-color: #c08081;
+        }
+
+        /* === Шапка === */
+        .header {
+            background: #300;
+            color: white;
+            padding: 1rem;
+            text-align: left;
+        }
+
+        .header a {
+            color: white;
+            text-decoration: none;
+        }
+
+        /* === Навигация === */
+        .nav {
+            background:  #808080;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 18px;
+            transition: color 0.3s ease;
+        }
+
+        .nav a:hover {
+            color: #ff7581;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info {
+            color: white;
+            font-size: 18px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            vertical-align: middle;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            color: #ffcc00;
+        }
+
+        /* === Поисковая строка === */
+        .search-bar {
+            background: #f4f4f4;
+            padding: 1rem 0;
+            border-bottom: 2px solid #ddd;
+            text-align: center;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 2px solid #446A7D;
+            border-radius: 25px;
+            font-size: 16px;
+            width: 250px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #ffcc00;
+            box-shadow: 0 0 5px rgba(255, 204, 0, 0.6);
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background-color: #446A7D;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .search-btn:hover {
+            background-color: #ffcc00;
+            color: #300;
+            transform: scale(1.05);
+        }
+
+        /* === Контент === */
+        .content {
+            padding: 2rem;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .post {
+            border: 1px solid #ddd;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .post img {
+            max-width: 200px;
+            border-radius: 10px;
+        }
+
+        /* === Подвал === */
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            color: #777;
+            font-size: 14px;
+        }
+
+        /* === Фон для разных страниц === */
+        body.post-detail {
+            background-color: #808080; /* фон только для страницы поста */
+        }
+
+        body.post-list {
+            background-color: white; /* фон для списка постов */
+        }
+    </style>
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+
+    <!-- Навигация -->
+    <div class="nav">
+        <div class="nav-left">
+            {% if user.is_authenticated %}
+                <div class="user-info">
+                    <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Аватар" class="user-avatar">
+                    👋 Привет, {{ user.username }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="nav-center">
+            <a href="/">Главная</a> |
+            {% if user.is_staff %}
+                <a href="/admin/">Админка</a> |
+            {% endif %}
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn">Выйти</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Вход</a> |
+                <a href="{% url 'register' %}">Регистрация</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Поисковая строка -->
+    <div class="search-bar">
+        <form method="get" action="/" style="display:inline-block;">
+            <input type="text" name="q" placeholder="Поиск..." class="search-input">
+            <button type="submit" class="search-btn">🔍 Найти</button>
+        </form>
+    </div>
+
+    <!-- Контент -->
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Подвал -->
+    <div class="footer">
+        © {{ year|default:"2025" }} Мир Лудомании. Все права защищены.
+    </div>
+
+</body>
+</html>
