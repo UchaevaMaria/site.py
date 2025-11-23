@@ -1,45 +1,255 @@
 {% extends 'blog/base.html' %}
-{% block title %}{{ post.title }}{% endblock %}
+{% load static %}
+
+{% block title %}{{ post.title }} - MathMaster{% endblock %}
+
 {% block content %}
-
-<h2>{{ post.title }}</h2>
-{% if post.image %}
-    <img src="{{ post.image.url }}" alt="{{ post.title }}" width="400">
-{% endif %}
-<p>{{ post.content|linebreaks }}</p>
-
-<p><strong>Автор:</strong> {{ post.author }}</p>
-<p><strong>Дата публикации:</strong> {{ post.published_date|date:"d.m.Y H:i" }}</p>
-<p><strong>Категория:</strong> {{ post.category }}</p>
-
-<hr>
-<h3>Комментарии</h3>
-
-{% for comment in comments %}
-    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
-        <strong>{{ comment.author }}</strong> — {{ comment.created_date|date:"d.m.Y H:i" }}<br>
-        {{ comment.text }}
-
-        {% if user.is_superuser or user.username == comment.author %}
-            <!-- Кнопка удаления комментария -->
-            <form method="post" action="{% url 'delete_comment' comment.id %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" style="color:red; background:none; border:none; cursor:pointer;">Удалить</button>
-            </form>
-        {% endif %}
+<div class="content-card">
+    <!-- Заголовок и мета-информация -->
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <span class="math-badge" style="background: {% if post.difficulty == 'beginner' %}#28a745{% elif post.difficulty == 'intermediate' %}#ffc107{% else %}#dc3545{% endif %}">
+                {{ post.get_difficulty_display }}
+            </span>
+            {% if post.category %}
+            <span class="math-badge" style="background: #6c757d;">
+                {{ post.category.name }}
+            </span>
+            {% endif %}
+        </div>
+        <div style="color: #6c757d; font-size: 0.9rem;">
+            ⏱️ {{ post.reading_time }} мин чтения
+        </div>
     </div>
-{% empty %}
-    <p>Комментариев пока нет.</p>
-{% endfor %}
 
-<h4>Оставить комментарий</h4>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Отправить</button>
-</form>
+    <h1 style="color: #3a0ca3; margin-bottom: 1rem; font-size: 2rem;">{{ post.title }}</h1>
 
-<a href="{% url 'post_list' %}">← Назад</a>
+    <!-- Автор и дата -->
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #e9ecef;">
+        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Автор" style="width: 50px; height: 50px; border-radius: 50%;">
+        <div>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ post.author.username }}</div>
+            <div style="color: #6c757d;">{{ post.created_date|date:"d.m.Y H:i" }}</div>
+        </div>
+    </div>
 
+    <!-- Изображение поста -->
+    {% if post.image %}
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <img src="{{ post.image.url }}" alt="{{ post.title }}" style="max-width: 100%; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    </div>
+    {% endif %}
+
+    <!-- Основное содержание -->
+    <div style="margin-bottom: 3rem;">
+        <h2 style="color: #4361ee; margin-bottom: 1rem;">📝 Содержание</h2>
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; line-height: 1.7; font-size: 1.1rem;">
+            {{ post.content|linebreaks }}
+        </div>
+    </div>
+
+    <!-- Теоретическая часть -->
+    {% if post.theory_content %}
+    <div style="margin-bottom: 3rem;">
+        <h2 style="color: #4361ee; margin-bottom: 1rem;">📚 Теоретическая часть</h2>
+        <div style="background: #e8f4fd; padding: 1.5rem; border-radius: 10px; border-left: 5px solid #4361ee; line-height: 1.7; font-size: 1.1rem;">
+            {{ post.theory_content|linebreaks }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Практические задачи -->
+    {% if post.problems.all %}
+    <div style="margin-bottom: 3rem;">
+        <h2 style="color: #4361ee; margin-bottom: 1rem;">💪 Практические задачи</h2>
+
+        {% for problem in post.problems.all %}
+        <div class="post-card" style="margin-bottom: 2rem;">
+            <h3 style="color: #3a0ca3; margin-bottom: 1rem;">
+                Задача {{ forloop.counter }}
+            </h3>
+
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; border: 2px solid #e9ecef; margin-bottom: 1rem;">
+                <p style="font-size: 1.1rem; margin-bottom: 0;"><strong>Условие:</strong> {{ problem.question }}</p>
+            </div>
+
+            <!-- Форма для ответа -->
+            <div class="answer-section">
+                <form class="answer-form" data-problem-id="{{ problem.id }}">
+                    {% csrf_token %}
+                    <div style="display: flex; gap: 1rem; align-items: start; margin-bottom: 1rem;">
+                        <input type="text"
+                               name="answer"
+                               class="search-input"
+                               placeholder="Введите ваш ответ..."
+                               style="flex: 1;"
+                               id="answer-input-{{ problem.id }}">
+                        <button type="submit" class="btn btn-primary check-answer-btn" id="check-btn-{{ problem.id }}">
+                            Проверить
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Результат проверки -->
+                <div class="result-message" id="result-{{ problem.id }}" style="display: none; margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600;"></div>
+
+                <!-- Подсказка -->
+                {% if problem.hint %}
+                <details style="margin-bottom: 1rem;">
+                    <summary style="cursor: pointer; color: #4361ee; font-weight: 600; font-size: 1.1rem;">
+                        💡 Показать подсказку
+                    </summary>
+                    <div style="background: #fff3cd; padding: 1rem; border-radius: 8px; margin-top: 0.5rem; border-left: 3px solid #ffc107;">
+                        <strong style="color: #856404;">Подсказка:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: #856404;">{{ problem.hint }}</p>
+                    </div>
+                </details>
+                {% endif %}
+
+                <!-- Решение (показывается только после правильного ответа) -->
+                <div class="solution-section" id="solution-{{ problem.id }}" style="display: none;">
+                    <div style="background: #d4edda; padding: 1.5rem; border-radius: 8px; margin-top: 1rem; border-left: 4px solid #28a745;">
+                        <h4 style="color: #155724; margin-bottom: 1rem;">✅ Правильно! Решение:</h4>
+                        <div style="line-height: 1.6; color: #155724;">
+                            {{ problem.solution|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Комментарии -->
+    <div>
+        <h2 style="color: #4361ee; margin-bottom: 1rem;">💬 Обсуждение</h2>
+
+        <!-- Форма комментария -->
+        <div class="post-card">
+            <h3 style="color: #3a0ca3; margin-bottom: 1rem;">Добавить комментарий</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div style="margin-bottom: 1rem;">
+                    <input type="text" name="author" placeholder="Ваше имя" class="search-input" style="margin-bottom: 1rem;">
+                    <textarea name="text" placeholder="Ваш комментарий..." class="search-input" style="height: 100px; resize: vertical;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Отправить комментарий</button>
+            </form>
+        </div>
+
+        <!-- Список комментариев -->
+        {% for comment in comments %}
+        <div class="post-card">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <strong style="color: #3a0ca3;">{{ comment.author }}</strong>
+                <small style="color: #6c757d;">{{ comment.created_date|date:"d.m.Y H:i" }}</small>
+            </div>
+            <p style="line-height: 1.6;">{{ comment.text }}</p>
+
+            {% if user.is_superuser or user.username == comment.author %}
+            <div style="margin-top: 0.5rem;">
+                <a href="{% url 'delete_comment' comment.id %}" class="btn" style="background: #dc3545; color: white; padding: 0.3rem 0.8rem; font-size: 0.9rem;">
+                    Удалить
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="post-card" style="text-align: center;">
+            <p style="color: #6c757d; font-size: 1.1rem;">Пока нет комментариев. Будьте первым!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка форм ответов
+    document.querySelectorAll('.answer-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const problemId = this.dataset.problemId;
+            const answerInput = document.getElementById(`answer-input-${problemId}`);
+            const checkBtn = document.getElementById(`check-btn-${problemId}`);
+            const resultMessage = document.getElementById(`result-${problemId}`);
+            const solutionSection = document.getElementById(`solution-${problemId}`);
+
+            const answer = answerInput.value.trim();
+            if (!answer) {
+                showResult(resultMessage, '❌ Пожалуйста, введите ответ', 'error');
+                return;
+            }
+
+            // Показываем загрузку
+            checkBtn.disabled = true;
+            checkBtn.textContent = 'Проверяем...';
+
+            // Отправляем запрос на проверку
+            fetch(`/check-answer/${problemId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `answer=${encodeURIComponent(answer)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_correct) {
+                    // ПРАВИЛЬНЫЙ ОТВЕТ - ЗЕЛЕНЫЙ
+                    showResult(resultMessage, data.feedback, 'success');
+
+                    // ПОКАЗЫВАЕМ РЕШЕНИЕ ТОЛЬКО ПРИ ПРАВИЛЬНОМ ОТВЕТЕ
+                    solutionSection.style.display = 'block';
+
+                    answerInput.disabled = true;
+                    checkBtn.disabled = true;
+                    checkBtn.textContent = 'Решено!';
+                    checkBtn.style.background = '#28a745';
+                } else {
+                    // НЕПРАВИЛЬНЫЙ ОТВЕТ - КРАСНЫЙ
+                    showResult(resultMessage, data.feedback, 'error');
+
+                    // РЕШЕНИЕ НЕ ПОКАЗЫВАЕМ ПРИ НЕПРАВИЛЬНОМ ОТВЕТЕ
+                    solutionSection.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                showResult(resultMessage, '❌ Ошибка при проверке ответа', 'error');
+                solutionSection.style.display = 'none';
+            })
+            .finally(() => {
+                if (!answerInput.disabled) {
+                    checkBtn.disabled = false;
+                    checkBtn.textContent = 'Проверить';
+                }
+            });
+        });
+    });
+
+    function showResult(element, message, type) {
+        element.style.display = 'block';
+        element.textContent = message;
+        element.style.fontWeight = '600';
+
+        if (type === 'success') {
+            // ЗЕЛЕНЫЙ для правильных ответов
+            element.style.background = '#d4edda';
+            element.style.color = '#155724';
+            element.style.border = '2px solid #28a745';
+        } else {
+            // КРАСНЫЙ для неправильных ответов
+            element.style.background = '#f8d7da';
+            element.style.color = '#721c24';
+            element.style.border = '2px solid #dc3545';
+
+            // Автоматически скрываем сообщение об ошибке через 5 секунд
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+    }
+});
+</script>
 {% endblock %}
-{% block body_class %}post-detail{% endblock %}

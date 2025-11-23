@@ -135,4 +135,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'  # после успешного входа — на главную
 LOGOUT_REDIRECT_URL = '/'  # после выхода — тоже на главную
+# Настройки для математического сайта
+MATH_SITE_CONFIG = {
+    'SITE_NAME': 'MathMaster',
+    'SITE_DESCRIPTION': 'Изучайте математику с удовольствием',
+    'FEATURED_CATEGORIES': ['Алгебра', 'Геометрия', 'Математический анализ'],
+}
 
