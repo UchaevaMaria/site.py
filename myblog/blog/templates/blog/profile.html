@@ -1,0 +1,17 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<h2>👤 Профиль</h2>
+
+<img src="{{ profile.avatar.url }}" alt="Аватар" width="150" style="border-radius: 50%;">
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Обновить аватар</button>
+</form>
+
+<a href="/">← Назад</a>
+{% endblock %}
